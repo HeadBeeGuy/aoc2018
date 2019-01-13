@@ -3,39 +3,53 @@
 # many people long before me! But I suppose that I'll have a greater
 # appreciation for these topics and problems once I've made my own amateur stab
 # at them!
+# This one took me several tries and several incorrect answers.
 
+# An elf, basically. They perform a second of work at their job until they
+# finish. As it stands, the code doesn't perform the example correctly - jobs
+# that take one second end up taking at least two. But in the final problem
+# they take much longer than that, so I decided to ignore that edge case.
 class Worker
+  attr_accessor :busy, :job_id
+
   def initialize
     @busy = false
-    @job_end_time = 0
     @job_id = nil
+    @remaining_job_time = 0
   end
 
-  def assign_job(job_id, current_time, completion_time)
+  # simulates the worker's actions taken once per second
+  def work
+    if @busy && @remaining_job_time > 0
+      @remaining_job_time -= 1
+    end
+  end
+
+  # as defined in the example, the second a job is assigned, the worker performs 
+  # one second of work on it
+  def assign_job(job_id, job_time)
     @busy = true
+    @remaining_job_time = job_time - 1
     @job_id = job_id
-    @job_end_time = current_time + completion_time[job_id] - 1
-    puts "#{current_time}: Job #{job_id} has been assigned. Completion time: #{@job_end_time}"
   end
 
-  def busy?
-    @busy
-  end
-
-  def are_you_finishing?(current_time)
-    if @busy && @job_end_time <= current_time
+  def are_you_finishing?
+    if @remaining_job_time <= 0
       @busy = false
-      @job_end_time = nil
-      @job_id
+      former_id = @job_id
+      @job_id = nil
+      @remaining_job_time = nil
+      former_id
     else
       false
     end
   end
+
 end
 
 # As defined in the problem, the amount of time it takes to complete each job
 completion_time = {}
-completion_time_index = 61
+completion_time_index = 61 # The time it takes job "A" to complete
 ("A".."Z").to_a.each do |letter|
   completion_time[letter] = completion_time_index
   completion_time_index += 1
@@ -85,22 +99,26 @@ end
 potential_steps += no_prereqs
 
 until final_order.length >= 26
-  # puts "#{current_time}: New second. Potential steps: #{potential_steps}"
+  print "#{current_time}\t"
   potential_steps.sort!
   completed_this_turn = []
 
   workers.each do |worker|
-    if worker.busy?
-      # check if this is the last second that the job is active
-      job_id = worker.are_you_finishing?(current_time)
-      if job_id
-        completed_this_turn << job_id
+    # if the worker has a job, perform a second of work on it
+    worker.work
+    if worker.busy
+      print worker.job_id + "\t"
+      finished_job = worker.are_you_finishing?
+      if finished_job
+        completed_this_turn << finished_job
       end
-    elsif !potential_steps[0].nil?
-      # throw the next available job at this worker
-      # puts "#{current_time}: Found free worker. Assigning job #{potential_steps[0]}"
-      worker.assign_job(potential_steps[0], current_time, completion_time)
+    elsif !worker.busy && !potential_steps[0].nil?
+      # this worker is idle and a job is available: time to work!
+      worker.assign_job(potential_steps[0], completion_time[ potential_steps[0]] )
+      print potential_steps[0] + "\t"
       potential_steps.delete_at(0)
+    else
+      print ".\t"
     end
   end
 
@@ -108,7 +126,6 @@ until final_order.length >= 26
   # otherwise workers snipe the child jobs on the same second another
   # one finishes
   completed_this_turn.each do |job_id|
-    puts "#{current_time}: Job #{job_id} is finished."
     final_order << job_id
     step_tree[job_id][:children].each do |new_step|
       prereqs_met = true
@@ -123,8 +140,9 @@ until final_order.length >= 26
     end
   end
 
+  print "\n"
   current_time += 1
 end
 
 puts "Here's the final order of completion: #{final_order}"
-puts "It took #{current_time - 1} seconds to complete all of them."
+puts "It took #{current_time} seconds to complete all of them."
