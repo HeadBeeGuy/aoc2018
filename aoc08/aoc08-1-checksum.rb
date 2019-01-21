@@ -1,92 +1,54 @@
 # Advent of Code Day 8 part 1
+# Sweet grover did this one throw me for a loop! I think I had several mistakes
+# in the algorithms I was using in previous attempts. A lot of them worked on
+# the test data but fell apart with the actual data with infinite recursion or
+# inaccurate sums. But I stuck with it!
 
-$metadata_total = 0
+# When passed an array, find the total size, in number of array entries, of all
+# its children. This is so we can identify the metadata nodes that occur after
+# it and sum them all up.
+# This always passes in the full tail of the array past this starting point,
+# which is probably quite inefficient. Modern hardware saves me once again!
+def size_of_children(arr)
+  children_count = arr[0]
+  metadata_count = arr[1]
 
-# this one passes the array around
-# and it works on sample data!
-# def size_of_children(base_array)
-#   # puts "Entering size_of_children function. The array looks like: #{base_array.inspect}"
-#   # the first two entries will always exist
-#   children_count = base_array[0]
-#   metadata_count = base_array[1]
-#   if children_count == 0
-#     # we've bottomed out
-#     metadata_entries = base_array[2..(metadata_count + 1)]
-#     # puts "Bottomed out. The following entries are metadata: #{metadata_entries.inspect}"
-#     # puts "You should add this sum to the final: #{metadata_entries.sum}"
-#     $metadata_total += metadata_entries.sum
-#     # so how big is this child?
-#     ( 2 + metadata_count )
-#   elsif children_count >= 1
-#     # We've got at least one child, but we don't know how big it is. Find how
-#     # big the first child is, then keep going through the remaining children,
-#     # finding their sizes in turn. And in doing so, we'll find their metadata
-#     # sums as well.
-#     # puts "I detect this many children: #{children_count}"
-#     current_child_index = 2
-#     children_count.times do
-#       # puts "Entering the recursive bit. current_child_index is presently: #{current_child_index}"
-#       current_child_index += size_of_children(base_array[(current_child_index)..-1])
-#     end
-#     # Once we're done iterating through the children, we know where this node's
-#     # metadata starts
-#     if metadata_count == 1
-#       metadata_entries = [ base_array[current_child_index] ]
-#     else
-#       # this code breaks and goes one entry off if metadata_count is 1
-#       metadata_entries = base_array[(current_child_index + 1)..(current_child_index+metadata_count)]
-#     end
-#     $metadata_total += metadata_entries.sum
-#     current_child_index
-#   end
-# end
-
-# I rewrote the previous function to not alter the original array at all, just
-# play around with where it starts. But in either case, OS X will toss up an
-# error "stack level too deep". Maybe it just doesn't like how much recursion
-# is going on? I'll have to take this home and see if it runs on my desktop.
-def size_of_children(big_array, start_index)
-  # the first two entries will always exist
-  children_count = big_array[start_index]
-  metadata_count = big_array[start_index + 1]
-  # puts "I detect #{children_count} children and #{metadata_count} metadata entries."
   if children_count == 0
-    # we've bottomed out
-    metadata_entries = big_array[(start_index + 2)..(start_index + metadata_count + 1)]
-    # puts "Bottomed out. The following entries are metadata: #{metadata_entries.inspect}"
-    # puts "You should add this sum to the final: #{metadata_entries.sum}"
-    $metadata_total += metadata_entries.sum
-    # so how big is this child?
-    ( 2 + metadata_count )
+    # No further recursion necessary. Metadata entries simply follow the second
+    # entry.
+    $metadata_total += arr[2..(metadata_count+1)].sum
+    # The size is the two information entries in the beginning, plus however
+    # many metadata nodes we have.
+    return (2 + metadata_count)
   elsif children_count >= 1
-    # We've got at least one child, but we don't know how big it is. Find how
-    # big the first child is, then keep going through the remaining children,
-    # finding their sizes in turn. And in doing so, we'll find their metadata
-    # sums as well.
-    current_child_index = 2
+    # We've got one or more children, but we don't know how big they are. Find
+    # their size, so that we know how many entries to skip to get to this
+    # node's metadata.
+    total_children_size = 0
+
+    # we can only know where the next child starts by knowing how big its
+    # previous siblings were
     children_count.times do
-      # puts "Entering the recursive bit. current_child_index is presently: #{current_child_index}"
-      current_child_index += size_of_children(big_array, (start_index + current_child_index))
+      total_children_size += size_of_children(arr[2+total_children_size..-1])
     end
-    # Once we're done iterating through the children, we know where this node's
-    # metadata starts
-    if metadata_count == 1
-      metadata_entries = [ big_array[start_index + current_child_index] ]
-    else
-      # this code breaks and goes one entry off if metadata_count is 1
-      metadata_entries = big_array[(start_index + current_child_index + 1)..(start_index + current_child_index+metadata_count)]
-    end
-    # puts "We've come back out to a parent node's metadata entries. Here they are: #{metadata_entries}"
-    $metadata_total += metadata_entries.sum
-    current_child_index
+
+    # find metadata total, assuming it's greater than zero
+    metadata_nodes = []
+    $metadata_total += arr[(2 + total_children_size)..(1 + total_children_size + metadata_count)].sum
+
+    return (2 + total_children_size + metadata_count)
   end
 end
 
-file = File.open("sample_input.txt")
+$metadata_total = 0
+
+file = File.open("input.txt")
 tree_file = file.read
 root_list = tree_file.strip.split
 root_list.map!(&:to_i) # they're interpreted as strings by default
 
-size_of_children(root_list, 0)
+size_of_children(root_list)
 
-puts "Total calculated metadata: #{$metadata_total}"
+puts "Final metadata total: #{$metadata_total}"
+
+
