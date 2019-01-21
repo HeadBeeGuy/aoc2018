@@ -1,3 +1,7 @@
 
 # swap files created by vim
 *.swp
+
+# Rust's compiler stuff
+**/target
+
