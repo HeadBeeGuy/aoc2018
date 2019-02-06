@@ -5,6 +5,11 @@
 
 use std::collections::HashMap;
 
+struct Marble {
+    previous: &Marble,
+    next: &Marble,
+    value: i128
+}
 fn main() {
     let ending_marble = 71032;
     let player_count = 441;
