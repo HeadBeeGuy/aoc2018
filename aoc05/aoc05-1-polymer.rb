@@ -21,6 +21,4 @@ until chain[current_position + 1].nil?
   end
 end
 
-current_position = 0
-
 puts "The final chain is #{chain.size} characters long."
