@@ -1,32 +1,26 @@
 # Advent of Code 2018 Day 5 part 1
-# this seems relatively simple, but we'll see how it goes!
-#
-
-# by definition, two of the same letters with opposite cases will react
-def react?(first_char, second_char)
-  first_char.swapcase == second_char
-end
+# I was really unsatisfied with my previous implementation, so I came back and
+# wrote it again. It runs much, much faster - .3 seconds on my laptop.
 
 file = File.open("input.txt")
 polymer = file.read
 
 chain = polymer.strip.chars
+current_position = 0
 
-# Iterate through the array, finding reacting polymers and deleting them. I
-# think I could do this in only one traversal if I could look backward, but
-# Ruby's handy iterator functions don't seem to let you alter the index the way
-# you could in C, for example. We'll see if this leads to cartoonish
-# inefficiency with the real data.
-no_reactions = false
-until no_reactions
-  no_reactions = true
-  chain.each_index do |index|
-    if react?(chain[index], chain[index + 1])
-      chain.delete_at(index + 1)
-      chain.delete_at(index)
-      no_reactions = false
-    end
+until chain[current_position + 1].nil?
+  if chain[current_position] == chain[current_position + 1].swapcase
+    # This is a weird way to delete the two items, but doing it another way
+    # causes the answer to be incorrect - in my case, two off. I'm not sure
+    # why! There must be an edge case that I'm not thinking of.
+    chain.delete_at(current_position)
+    chain.delete_at(current_position)
+    current_position -= 1
+  else
+    current_position += 1
   end
 end
+
+current_position = 0
 
 puts "The final chain is #{chain.size} characters long."
